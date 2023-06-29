@@ -50,12 +50,14 @@ app.get('/', async (req, res) => {
 app.get('/todos', async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const options = {
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
-    };
-    const todos = await Todo.paginate({}, options);
-    res.json(todos);
+    const skip = (page - 1) * limit;
+
+    const todos = await Todo.find({})
+      .skip(skip)
+      .limit(parseInt(limit, 10))
+      .exec();
+
+    res.render('index', { todos });
   } catch (error) {
     res.status(500).json({ error: 'Failed to retrieve todos' });
   }
@@ -66,7 +68,6 @@ app.put('/todos/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const todo = await Todo.findOneAndUpdate({_id: id}, { $set: { title: req.body.title, description: req.body.description } }, { new: true, "upsert": true  });
-    console.log(todo)
     res.redirect('/');
   } catch (error) {
     res.status(500).json({ error: 'Failed to update todo' });
@@ -88,3 +89,5 @@ const port = 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+module.exports = app;
